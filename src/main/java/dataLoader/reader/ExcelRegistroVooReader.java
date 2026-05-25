@@ -26,9 +26,7 @@ public class ExcelRegistroVooReader {
     public List<RegistroVoo> extrairRegistros(String nomeArquivo) {
 
         List<RegistroVoo> registros = new ArrayList<>();
-
         AppLogger.info("ETL", "Iniciando abertura do arquivo Excel.", "Arquivo: " + nomeArquivo);
-
         try (Workbook workbook = new StreamingReader.Builder()
                 .rowCacheSize(100)
                 .bufferSize(4096)
