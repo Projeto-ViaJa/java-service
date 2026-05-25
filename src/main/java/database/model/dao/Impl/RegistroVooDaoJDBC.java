@@ -5,6 +5,7 @@ import database.model.dao.RegistroVooDao;
 import entity.RegistroVoo;
 import exceptions.DbException;
 import logger.AppLogger;
+import logger.SlackService;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,7 +13,8 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class RegistroVooDaoJDBC implements RegistroVooDao {
-
+    String webhook = "";
+    SlackService slack = new SlackService(webhook);
     private Connection conn;
     private final Integer BATCH_SIZE = 1000;
 
@@ -74,6 +76,8 @@ public class RegistroVooDaoJDBC implements RegistroVooDao {
                     ps.executeBatch();
                     AppLogger.info("DATABASE", "Lote parcial executado.",
                             batchCount + " registros enviados ao banco até o momento");
+                    slack.enviarMensagem("Database", "DATABASE - Lote parcial executado.", "INFO");
+
                 }
             }
 
@@ -83,18 +87,23 @@ public class RegistroVooDaoJDBC implements RegistroVooDao {
 
             AppLogger.info("DATABASE","Inserção em lotes finalizada e commit realizado.",
                     "Total de: " + registros.size() + " registros inseridos com sucesso na tabela registro_voo");
+            slack.enviarMensagem("Database", "DATABASE - Inserção em lotes finalizada e commit realizado.", "INFO");
+
 
         } catch (SQLException e) {
             AppLogger.error("DATABASE", "Falha durante inserção em lote, tentativa de rollback.", e);
+            slack.enviarMensagem("Database", "DATABASE - Falha durante inserção em lote, tentativa de rollback.", "ERROR");
             try {
                 conn.rollback();
                 conn.setAutoCommit(true);
                 AppLogger.warning("DATABASE","Rollbak realizado com sucesso.",
                         "Transação revertida após falha: " + e.getMessage());
+                slack.enviarMensagem("Database", "DATABASE - Rollbak realizado com sucesso.", "WARNING");
 
             } catch (SQLException ex) {
-
                 AppLogger.error("DATABASE","Falha ao executar rollback","Erro: " + ex.getMessage());
+                slack.enviarMensagem("Database", "DATABASE - Falha ao executar rollback.", "ERROR");
+
                 throw new DbException(ex.getMessage());
             }
 
@@ -111,10 +120,13 @@ public class RegistroVooDaoJDBC implements RegistroVooDao {
         try ( PreparedStatement ps = conn.prepareStatement(sql) ){
             ps.execute();
             AppLogger.info("DATABASE", "Tabela registro_voo truncada", "TRUNCATE executado antes da inserção em batch");
+            slack.enviarMensagem("Database", "DATABASE - TRUNCATE executado antes da inserção em batch", "ERROR");
 
 
         } catch (Exception e) {
             AppLogger.error("DATABASE","Falha ao truncar a tabela registro_voo.","Erro: " + e);
+            slack.enviarMensagem("Database", "DATABASE - Falha ao truncar a tabela registro_voo", "ERROR");
+
             throw new RuntimeException(e);
         }
     }

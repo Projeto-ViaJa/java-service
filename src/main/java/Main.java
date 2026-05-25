@@ -6,6 +6,7 @@ import entity.RegistroVoo;
 import dataLoader.reader.ExcelRegistroVooReader;
 import dataLoader.service.RegistroVooService;
 import exceptions.DbException;
+import logger.SlackService;
 import org.slf4j.Logger;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -25,6 +26,8 @@ import logger.AppLogger;
 public class Main {
 
     public static void main(String[] args) {
+        String webhook = "";
+        SlackService slack = new SlackService(webhook);
         String nomeArquivo = null;
 
         File file = new File("dados_registros_voo_10_anos.xlsx");
@@ -78,13 +81,17 @@ public class Main {
         try {
             AppLogger.info("DATABASE", "Carregando propriedades de conexão",
                     "Lendo db.properties via FileInputStream.");
+            slack.enviarMensagem("Database", "DATABASE - Carregando propriedades de conexão", "INFO");
 
             RegistroVooDao registroVooDao = DaoFactory.createRegistroVooDao();
-            AppLogger.info("DATABASE","Conexão com o banco de dados estabelecida","getConnection() bem-sucedido.");
+            AppLogger.info("","Conexão com o banco de dados estabelecida","getConnection() bem-sucedido.");
+            slack.enviarMensagem("Database", "DATABASE - Conexão com o banco de dados estabelecida ", "INFO");
+
             registroVooDao.insert(registrosVoo);
 
         } catch (DbException e) {
             AppLogger.error("DATABASE","Falaha ao conectar ao banco de dados", "Erro: " + e);
+            slack.enviarMensagem("Database", "DATABASE - Falaha ao conectar ao banco de dados ", "ERROR");
             throw new RuntimeException(e);
         }
     }
