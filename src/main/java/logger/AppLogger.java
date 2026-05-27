@@ -1,6 +1,7 @@
 package logger;
 
 import database.config.DB;
+import exceptions.DbException;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
@@ -58,9 +59,9 @@ public class AppLogger {
 
             }
 
-        } catch (SQLException ex) {
-
-            log.error("AppLogger: Falha ao salvar log no banco", ex);
+        } catch (SQLException | DbException ex) {
+            // Silenciosamente registra erro de conexão para evitar cascata de erros
+            log.debug("AppLogger: Falha ao salvar log no banco (banco pode estar indisponível)", ex);
         }
     }
 }

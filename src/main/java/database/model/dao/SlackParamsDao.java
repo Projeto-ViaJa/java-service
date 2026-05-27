@@ -11,18 +11,11 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO para consultar configurações de Slack na tabela SlackParams
- * Utilizado pelo SlackAppender para determinar se deve enviar notificações
- */
 public class SlackParamsDao {
 
     private static final Logger log = LoggerFactory.getLogger(SlackParamsDao.class);
     private static final String SQL_GET_ALL = "SELECT id, url_slack, canal, warning, infos, error, fkUsuario FROM SlackParams";
 
-    /**
-     * Busca todos os parâmetros de Slack configurados
-     */
     public List<SlackParams> obterTodosParams() {
         List<SlackParams> params = new ArrayList<>();
 
@@ -46,9 +39,6 @@ public class SlackParamsDao {
         return params;
     }
 
-    /**
-     * Busca parâmetros de Slack por ID do usuário
-     */
     public SlackParams obterParamsPorUsuario(Integer idUsuario) {
         if (idUsuario == null) {
             return null;
@@ -76,10 +66,6 @@ public class SlackParamsDao {
         }
     }
 
-    /**
-     * Busca o primeiro parâmetro de Slack configurado
-     * (útil se houver apenas uma configuração global)
-     */
     public SlackParams obterPrimeiroParam() {
         try {
             Connection conn = DB.getConnection();
@@ -97,14 +83,10 @@ public class SlackParamsDao {
             return param;
 
         } catch (Exception e) {
-            log.error("Erro ao consultar primeiro SlackParams", e);
+            log.debug("SlackParams não disponível no banco (banco pode estar indisponível): " + e.getMessage());
             return null;
         }
     }
-
-    /**
-     * Mapeia um resultado SQL para a entidade SlackParams
-     */
     private SlackParams mapResultSetToEntity(ResultSet rs) throws java.sql.SQLException {
         SlackParams param = new SlackParams();
 
