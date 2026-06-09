@@ -40,7 +40,7 @@ public class Main {
         }
 
         S3Client s3Client = new S3Provider().getS3Client();
-        String bucketName = "s3-viaja-arquivos";
+        String bucketName = "viaja-bucker-s3";
 
         try {
             ListObjectsRequest requisicao = ListObjectsRequest.builder()
