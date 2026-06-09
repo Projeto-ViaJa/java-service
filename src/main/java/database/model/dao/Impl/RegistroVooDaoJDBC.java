@@ -1,5 +1,6 @@
 package database.model.dao.Impl;
 
+import database.model.dao.AbstractDao;
 import database.model.dao.RegistroVooDao;
 import entity.RegistroVoo;
 import exceptions.DbException;
@@ -12,9 +13,8 @@ import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-public class RegistroVooDaoJDBC implements RegistroVooDao {
+public class RegistroVooDaoJDBC extends AbstractDao implements RegistroVooDao {
 
-    private Connection conn;
     private final int BATCH_SIZE = 1000;
 
     private SlackNotifier notifier = null;
@@ -23,7 +23,7 @@ public class RegistroVooDaoJDBC implements RegistroVooDao {
             DateTimeFormatter.ofPattern("HH:mm:ss");
 
     public RegistroVooDaoJDBC(Connection conn) {
-        this.conn = conn;
+        super(conn);
     }
 
     private void notificar(String nivel, String componente, String mensagem) {
@@ -48,13 +48,12 @@ public class RegistroVooDaoJDBC implements RegistroVooDao {
         truncateRegistroVoo();
 
         try {
-            conn.setAutoCommit(false);
+            super.conn.setAutoCommit(false);
         } catch (SQLException e) {
             throw new DbException(e.getMessage());
         }
 
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement ps = super.conn.prepareStatement(sql)) {
             int batchCount = 0;
 
             for (RegistroVoo registro : registros) {
@@ -83,32 +82,31 @@ public class RegistroVooDaoJDBC implements RegistroVooDao {
                     ps.executeBatch();
                     AppLogger.info("DATABASE", "Lote parcial executado",
                             batchCount + " registros enviados ao banco até o momento");
+                    notificar("INFO",  "Database", "Lote parcial executado.");
                 }
             }
 
             ps.executeBatch();
-            conn.commit();
-            conn.setAutoCommit(true);
+            super.conn.commit();
+            super.conn.setAutoCommit(true);
 
             AppLogger.info("DATABASE", "Inserção finalizada com sucesso",
                     "Total de " + registros.size() + " registros inseridos na tabela registro_voo");
-
+            notificar("INFO", "Database", "Inserção em lotes finalizada e commit realizado.");
         } catch (SQLException e) {
+
             AppLogger.error("DATABASE", "Falha durante inserção em lote, iniciando rollback", e);
             notificar("ERROR", "DATABASE", "Falha na inserção em lote | " + e.getMessage());
-            try {
-                conn.rollback();
-                conn.setAutoCommit(true);
-                AppLogger.warning("DATABASE", "Rollback realizado com sucesso",
-                        "Transação revertida após falha: " + e.getMessage());
-                notificar("WARNING", "DATABASE", "Rollback executado | Transação revertida após falha na inserção");
-            } catch (SQLException ex) {
-                AppLogger.error("DATABASE", "Falha ao executar rollback", "Erro: " + ex.getMessage());
-                notificar("ERROR", "DATABASE", "Falha no rollback | " + ex.getMessage());
-                throw new DbException(ex.getMessage());
-            }
+
+            super.rollback();
+            AppLogger.warning("DATABASE", "Rollback realizado com sucesso.",
+                    "Transação revertida após falha: " + e.getMessage());
+            notificar("WARNING", "Database", "Rollback realizado com sucesso.");
             throw new DbException(e.getMessage());
+
         }
+        AppLogger.info("DATABASE", "Inserção em lote concluída",
+                "Total: " + registros.size() + " registros");
         notificar("INFO", "DATABASE", "Inserção em lote concluída | Total: " + registros.size() + " registros");
     }
 
@@ -116,7 +114,7 @@ public class RegistroVooDaoJDBC implements RegistroVooDao {
     public void truncateRegistroVoo() {
         String sql = "TRUNCATE TABLE registro_voo;";
 
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = super.conn.prepareStatement(sql)) {
             ps.execute();
             AppLogger.info("DATABASE", "Tabela registro_voo truncada",
                     "TRUNCATE executado antes da inserção em batch");

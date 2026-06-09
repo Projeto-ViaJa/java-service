@@ -40,7 +40,7 @@ public class Main {
         }
 
         S3Client s3Client = new S3Provider().getS3Client();
-        String bucketName = "bucket-viaja";
+        String bucketName = "s3-viaja-arquivos";
 
         try {
             ListObjectsRequest requisicao = ListObjectsRequest.builder()
@@ -88,12 +88,12 @@ public class Main {
         ExcelRegistroVooReader reader = new ExcelRegistroVooReader();
         RegistroVooService service = new RegistroVooService();
 
-        System.out.println("\n=== TEST: Iniciando tentativa de extrair dados ===");
+        System.out.println("\n= Iniciando tentativa de extrair dados.");
         notifier.notify("INFO", "DATA READER", "Iniciando tentativa extrair dados");
 
         List<RegistroVoo> registrosVoo = service.filtrarBrasil(
                 reader.extrairRegistros(nomeArquivo));
-        System.out.println("\n=== TEST: Finalizado tentativa de extrair dados ===");
+        System.out.println("\n= Tentativa de extrair dados finalizada.");
 
         try {
             notifier.notify("INFO", "EXECUCAO", "ETL >>>>>>>>>>> Iniciado >>>>>>>>>>>");
