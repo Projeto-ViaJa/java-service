@@ -82,7 +82,6 @@ public class RegistroVooDaoJDBC extends AbstractDao implements RegistroVooDao {
                     ps.executeBatch();
                     AppLogger.info("DATABASE", "Lote parcial executado",
                             batchCount + " registros enviados ao banco até o momento");
-                    notificar("INFO",  "Database", "Lote parcial executado.");
                 }
             }
 
